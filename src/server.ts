@@ -13,12 +13,17 @@ app.get("/users", async () => {
 });
 
 app.post("/users", async (req, reply) => {
-  const createSchema = z.object({
-    name: z.string(),
-    email: z.string().email(),
-  });
+  const result = z
+    .object({
+      name: z.string({ invalid_type_error: "Name must be a string" }),
+      email: z.string().email({ message: "Invalid email" }),
+    })
+    .safeParse(req.body);
 
-  const { name, email } = createSchema.parse(req.body);
+  if (!result.success) {
+    return reply.code(400).send(result.error.message);
+  }
+  const { name, email } = result.data;
 
   await prisma.user.create({
     data: { name, email },
